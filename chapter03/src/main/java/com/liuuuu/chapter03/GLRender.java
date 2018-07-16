@@ -151,7 +151,7 @@ public class GLRender implements GLSurfaceView.Renderer {
      * OpenGL 是一个非常底层的画图接口，它所使用的缓冲区存储结构是和我们的 java 程序中不相同的。
      * Java 是大端字节序(BigEdian)，而 OpenGL 所需要的数据是小端字节序(LittleEdian)。
      * 所以，我们在将 Java 的缓冲区转化为 OpenGL 可用的缓冲区时需要作一些工作。建立buff的方法如下
-     * */
+     */
     public Buffer bufferUtil(int[] arr) {
         IntBuffer mBuffer;
 
