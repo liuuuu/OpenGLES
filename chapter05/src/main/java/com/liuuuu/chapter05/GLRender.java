@@ -1,4 +1,4 @@
-package com.liu.chapter04;
+package com.liuuuu.chapter05;
 
 import android.opengl.GLSurfaceView;
 import android.opengl.GLU;
@@ -7,14 +7,17 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class GLRender implements GLSurfaceView.Renderer {
 
+    // 旋转角度
     private float rot = 0.0f;
+
+    // 缩放倍数
+    private float scale = 0.5f;
 
     // 顶点数组
     private float[] vertices = new float[]{
@@ -73,6 +76,23 @@ public class GLRender implements GLSurfaceView.Renderer {
             4, 8, 0
     });
 
+    // 法线数组
+    private float[] normals = new float[]{
+            0.000000f, -0.417775f, 0.675974f,
+            0.675973f, 0.000000f, 0.417775f,
+            0.675973f, -0.000000f, -0.417775f,
+            -0.675973f, 0.000000f, -0.417775f,
+            -0.675973f, -0.000000f, 0.417775f,
+            -0.417775f, 0.675974f, 0.000000f,
+            0.417775f, 0.675973f, -0.000000f,
+            0.417775f, -0.675974f, 0.000000f,
+            -0.417775f, -0.675974f, 0.000000f,
+            0.000000f, -0.417775f, -0.675973f,
+            0.000000f, 0.417775f, -0.675974f,
+            0.000000f, 0.417775f, 0.675973f,
+
+    };
+
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
@@ -85,6 +105,9 @@ public class GLRender implements GLSurfaceView.Renderer {
 
         // 启用深度缓存
         gl.glEnable(GL10.GL_DEPTH_TEST);
+
+        // 设置光效
+        setupLight(gl);
     }
 
     @Override
@@ -101,10 +124,10 @@ public class GLRender implements GLSurfaceView.Renderer {
         gl.glLoadIdentity();
 
         // 创建一个透视投影矩阵（设置视口大小）
-        gl.glFrustumf(-ratio, ratio, -1, 1, 1.0f, 1000.0f);
+//        gl.glFrustumf(-ratio, ratio, -1, 1, 1.0f, 1000.0f);
 
         // 创建一个正交投影矩阵
-//        gl.glOrthof(-ratio, ratio, -1, 1, 1.0f, 1000.0f);
+        gl.glOrthof(-ratio, ratio, -1, 1, 1.0f, 1000.0f);
     }
 
     @Override
@@ -128,23 +151,36 @@ public class GLRender implements GLSurfaceView.Renderer {
         gl.glRotatef(rot, 1.0f, 1.0f, 1.0f);
 
         // 缩放操作
-        gl.glScalef(3.0f, 3.0f, 3.0f);
+        gl.glScalef(scale, scale, scale);
 
         // 允许设置顶点数组
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
 
-        // 设置顶点数组
-        gl.glVertexPointer(3, GL10.GL_FLOAT, 0, bufferUtil(vertices));
-
         // 允许设置颜色数组
         gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
+
+        // 允许设置法线数组
+        gl.glEnableClientState(GL10.GL_NORMAL_ARRAY);
+
+        // 设置法线数组
+        gl.glNormalPointer(GL10.GL_FLOAT, 0, bufferUtil(normals));
+
+        // 设置阴影模式（恒定模式）
+//        gl.glShadeModel(GL10.GL_FLAT);
+
+        // 设置阴影模式（光滑模式）
+        gl.glShadeModel(GL10.GL_SMOOTH);
+
+        // 设置顶点数组
+        gl.glVertexPointer(3, GL10.GL_FLOAT, 0, bufferUtil(vertices));
 
         // 设置颜色数组
         gl.glColorPointer(4, GL10.GL_FLOAT, 0, bufferUtil(colors));
 
         // 绘制
-//        gl.glDrawElements(GL10.GL_TRIANGLES, 60, GL10.GL_UNSIGNED_BYTE, icosahedronFaces);
+        gl.glDrawElements(GL10.GL_TRIANGLES, 60, GL10.GL_UNSIGNED_BYTE, icosahedronFaces);
 
+        /*
         // 循环多重绘制
         for (int i = 0; i < 30; i++) {
             gl.glLoadIdentity();
@@ -152,15 +188,64 @@ public class GLRender implements GLSurfaceView.Renderer {
             gl.glRotatef(rot, 1.0f, 1.0f, 1.0f);
             gl.glDrawElements(GL10.GL_TRIANGLES, 60, GL10.GL_UNSIGNED_BYTE, icosahedronFaces);
         }
+        */
 
         // 取消颜色数组和顶点数组
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
         gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
 
+        // 取消设置法线数组
+        gl.glDisableClientState(GL10.GL_NORMAL_ARRAY);
+
         // 更改旋转角度
         rot += 0.5;
     }
 
+
+    /**
+     * 设置光效
+     *
+     * @param gl
+     */
+    public void setupLight(GL10 gl) {
+
+        // 开启颜色材质
+        gl.glEnable(GL10.GL_COLOR_MATERIAL);
+
+        // 开启光效
+        gl.glEnable(GL10.GL_LIGHTING);
+
+        // 开启 0 号光源
+        gl.glEnable(GL10.GL_LIGHT0);
+
+        // 环境光颜色
+        FloatBuffer light0Ambient = (FloatBuffer) bufferUtil(new float[]{0.1f, 0.1f, 0.1f, 1.0f});
+        // 设置环境光
+        gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_AMBIENT, light0Ambient);
+
+        // 散射光的颜色
+        FloatBuffer light0Diffuse = (FloatBuffer) bufferUtil(new float[]{0.7f, 0.7f, 0.7f, 1.0f});
+        // 设置散射光
+        gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_DIFFUSE, light0Diffuse);
+
+        // 高光的颜色
+        FloatBuffer light0Specular = (FloatBuffer) bufferUtil(new float[]{0.7f, 0.7f, 0.7f, 1.0f});
+        // 设置高光
+        gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_SPECULAR, light0Specular);
+
+        // 光源的位置
+        FloatBuffer light0Position = (FloatBuffer) bufferUtil(new float[]{0.0f, 10.0f, 10.0f, 0.0f});
+        // 设置光源位置
+        gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_POSITION, light0Position);
+
+        // 光线的方向
+        FloatBuffer light0Direction = (FloatBuffer) bufferUtil(new float[]{0.0f, 0.0f, -1.0f});
+        // 设置光线的方向
+        gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_SPOT_DIRECTION, light0Direction);
+
+        // 设置光线的角度
+        gl.glLightf(GL10.GL_LIGHT0, GL10.GL_SPOT_CUTOFF, 45.0f);
+    }
 
     /*
      * OpenGL 是一个非常底层的画图接口，它所使用的缓冲区存储结构是和我们的 java 程序中不相同的。
